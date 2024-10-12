@@ -14,7 +14,7 @@ jobs:
   pgxn-test:
     strategy:
       matrix:
-        pg: [16, 15, 14, 13]
+        pg: [17, 16, 15, 14, 13]
     runs-on: ubuntu-latest
     container: pgxn/pgxn-tools
     steps:
@@ -64,7 +64,20 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
+          load: true
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ env.BUILD_VERSION }}
+      - name: Run Docker image
+        run: docker run --name pg_uuidv7 ghcr.io/${{ github.repository }} /bin/sh
+      - name: Copy Docker container artifacts
+        run: docker cp pg_uuidv7:/srv/ ./
+      - name: Upload the latest artifacts to releases
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "srv/*"
+          makeLatest: true
+          name: ${{ env.GIT_TAG }}
+          tag: ${{ env.GIT_TAG }}
